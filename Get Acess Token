@@ -1,0 +1,62 @@
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+
+@SpringBootApplication
+public class ShellyCloudApiDemoApplication implements CommandLineRunner {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ShellyCloudApiDemoApplication.class, args);
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        String username = "YOUR_USERNAME_HERE";
+        String password = "YOUR_PASSWORD_HERE";
+        String clientId = "YOUR_CLIENT_ID_HERE";
+        String clientSecret = "YOUR_CLIENT_SECRET_HERE";
+        String grantType = "password";
+        String url = "https://shelly.cloud/oauth/token";
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.add("username", username);
+        map.add("password", password);
+        map.add("client_id", clientId);
+        map.add("client_secret", clientSecret);
+        map.add("grant_type", grantType);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
+
+        String response = restTemplate.exchange(url, HttpMethod.POST, request, String.class).getBody();
+
+        String accessToken = extractAccessTokenFromResponse(response);
+
+        System.out.println("Access token: " + accessToken);
+    }
+
+    private String extractAccessTokenFromResponse(String response) {
+        String accessToken = null;
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response);
+            accessToken = root.path("access_token").asText();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return accessToken;
+    }
+}
